@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- For themed icons, which use only the shape. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M41,24h26a7,7 0 0 1 7,7v46a7,7 0 0 1 -7,7h-26a7,7 0 0 1 -7,-7v-46a7,7 0 0 1 7,-7zM41,28a3,3 0 0 0 -3,3v46a3,3 0 0 0 3,3h26a3,3 0 0 0 3,-3v-46a3,3 0 0 0 -3,-3z" />
+    <path
+        android:pathData="M54,56V52C54,47 63,47 63,42V28"
+        android:strokeWidth="4"
+        android:strokeColor="#FFFFFF" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,56L62,74L54,70L46,74Z" />
+</vector>

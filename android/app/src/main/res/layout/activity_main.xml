@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Idle"
+            android:textStyle="bold" />
+
+        <!-- Live preview of exactly what is sent to the 240x280 panel -->
+        <ImageView
+            android:id="@+id/preview"
+            android:layout_width="180dp"
+            android:layout_height="210dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:background="#222222"
+            android:contentDescription="Display preview"
+            android:scaleType="fitXY" />
+
+        <!-- Back key for the app on the virtual display -->
+        <Button
+            android:id="@+id/back"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Back"
+            android:visibility="gone" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Source (change while stopped)" />
+
+        <RadioGroup
+            android:id="@+id/source"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radioScreen"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Screen capture" />
+
+            <RadioButton
+                android:id="@+id/radioVirtual"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:text="Virtual display" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Map colours (a filter, so colours are approximate)" />
+
+        <RadioGroup
+            android:id="@+id/mapColours"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/coloursNormal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Normal" />
+
+            <RadioButton
+                android:id="@+id/coloursDay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:text="Day" />
+
+            <RadioButton
+                android:id="@+id/coloursNight"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:text="Night" />
+        </RadioGroup>
+
+        <TextView android:id="@+id/mapTextLabel" style="@style/SeekLabel" />
+        <SeekBar android:id="@+id/mapText" style="@style/Seek" />
+
+        <CheckBox
+            android:id="@+id/rotate180"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Display mounted upside down (turn the picture 180°)" />
+
+        <TextView android:id="@+id/fpsLabel" style="@style/SeekLabel" />
+        <SeekBar android:id="@+id/fps" style="@style/Seek" />
+
+        <TextView android:id="@+id/qualityLabel" style="@style/SeekLabel" />
+        <SeekBar android:id="@+id/quality" style="@style/Seek" />
+
+        <TextView android:id="@+id/zoomLabel" style="@style/SeekLabel" />
+        <SeekBar android:id="@+id/zoom" style="@style/Seek" />
+
+        <TextView android:id="@+id/centerLabel" style="@style/SeekLabel" />
+        <SeekBar android:id="@+id/center" style="@style/Seek" />
+
+        <TextView android:id="@+id/centerXLabel" style="@style/SeekLabel" />
+        <SeekBar android:id="@+id/centerX" style="@style/Seek" />
+
+        <Button
+            android:id="@+id/start"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Start mirroring" />
+
+        <Button
+            android:id="@+id/stop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Stop" />
+
+        <Button
+            android:id="@+id/openApp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Open navigation app" />
+
+        <Button
+            android:id="@+id/chooseApp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Navigation app: not chosen" />
+
+        <Button
+            android:id="@+id/pair"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pair wireless debugging" />
+
+        <Button
+            android:id="@+id/forgetDisplay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Forget paired display" />
+    </LinearLayout>
+</ScrollView>

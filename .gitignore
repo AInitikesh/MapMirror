@@ -1,0 +1,21 @@
+# Android
+android/.gradle/
+android/.idea/
+android/.kotlin/
+android/build/
+android/app/build/
+android/local.properties
+*.apk
+*.aab
+*.iml
+
+# PlatformIO
+firmware/.pio/
+firmware/.vscode/
+
+# Signing keys
+*.jks
+*.keystore
+
+# Wi-Fi details for the firmware
+firmware/include/secrets.h

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A small display showing a route and a navigation arrow. Kept inside the 66 dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Display body -->
+    <path
+        android:fillColor="#F2F6F8"
+        android:pathData="M41,24h26a7,7 0 0 1 7,7v46a7,7 0 0 1 -7,7h-26a7,7 0 0 1 -7,-7v-46a7,7 0 0 1 7,-7z" />
+    <!-- Screen -->
+    <path
+        android:fillColor="#10242E"
+        android:pathData="M41,28h26a3,3 0 0 1 3,3v46a3,3 0 0 1 -3,3h-26a3,3 0 0 1 -3,-3v-46a3,3 0 0 1 3,-3z" />
+    <!-- Side streets -->
+    <path
+        android:pathData="M38,47H56M56,62H70M45,28V47"
+        android:strokeWidth="2"
+        android:strokeColor="#2F4C59" />
+    <!-- Route -->
+    <path
+        android:pathData="M54,72V58C54,50 63,50 63,42V28"
+        android:strokeWidth="5"
+        android:strokeColor="#35C8F5"
+        android:strokeLineCap="butt" />
+    <!-- Navigation arrow -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,56L62,74L54,70L46,74Z"
+        android:strokeWidth="1.5"
+        android:strokeColor="#10242E"
+        android:strokeLineJoin="round" />
+</vector>
