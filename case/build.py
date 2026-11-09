@@ -74,8 +74,7 @@ SCREW_X, SCREW_Y = 19.0, 22.0      # concentric with the box's rounded corners
 M3_CLEAR = 3.4
 M3_HEAD_D, M3_HEAD_H = 5.7, 1.65   # button head
 M3_RECESS_D = 6.2
-M3_LENGTH = 6.0       # the latch's screw, into an insert in the mount
-M3_INSERT_D, M3_INSERT_L = 4.2, 4.0   # M3 x 4 heat-set insert, about 4.2 mm hole
+M3_LENGTH = 8.0       # the latch's screw, tapping into the mount
 # The lid screws tap their own threads straight into the shell's corners, with no inserts.
 M3_PILOT_D = 2.6       # pilot hole for an M3 screw to cut its thread in printed plastic
 M3_LID_LENGTH = 10.0
@@ -147,15 +146,17 @@ PRELOAD = 0.6          # the arm stays bent by this much with the box locked on
 BUTTON_X0, BUTTON_X1, BUTTON_Y0, BUTTON_Y1 = 17.6, 21.0, 6.0, 17.0
 BUTTON_TOP = 22.5      # clears the lid's raised corners as the box slides past
 LATCH_SCREW_Y = -11.0
-LATCH_HOLE_DEPTH = 5.0 # in the mount, for its M3 insert
+LATCH_HOLE_DEPTH = 8.0 # pilot hole in the mount, below the latch's pocket
 
 # ---------------------------------------------------------------- handlebar clamp
-CLAMP_W = 22.0         # along the bar
+CLAMP_W = 17.0         # along the bar. 22 was too wide for the gap on a Karizma XMR
 CLAMP_WALL = 5.0       # around the bar on the lower half
 PARTING_GAP = 1.5      # clamp halves stop this far apart, so the bolts can squeeze
 M4_CLEAR = 4.5
 M4_HEAD_D, M4_HEAD_H = 7.6, 4.5
-M4_INSERT_D, M4_INSERT_L = 5.6, 8.1    # M4 x 8.1 heat-set insert, about 5.6 mm hole
+# The clamp bolts tap their own threads into the upper mount, with no inserts.
+M4_PILOT_D = 3.5       # pilot hole for an M4 bolt to cut its thread in printed plastic
+M4_BITE = 8.0          # thread the bolts need in the mount, twice their diameter
 M4_HOLE_DEPTH = 11.0   # straight part of the hole, which then ends in a 45 degree cone
 BOLT_MARGIN = 5.0      # bar surface to bolt centre
 M4_SEAT = 6.0          # bar centre to the bolt head seat, which sets the wing thickness
@@ -163,7 +164,15 @@ M4_LENGTH = 16.0
 BAR_RELIEF = 0.8       # flat above the top of the bar, so the saddle prints as a short bridge
 # A solid neck, as narrow along the bar as the clamp, that lifts the rail plate and box
 # above whatever sits beside the clamp on the bar, such as the switch block on clip-ons.
-MOUNT_RISE = 0.0          # set from the bike: see the README
+# SIDE_H is how far the tallest part beside the clamp stands above the top of the bar, on the
+# side the box faces. 0 means nothing beside the clamp is in the way. The 16 mm default is an
+# estimate, from photos, for the left switch block of a Hero Karizma XMR 210: measure yours.
+SIDE_H = 16.0
+SIDE_GAP = 0.0         # along the bar, from the clamp's edge to that part. 0 is the worst case
+SIDE_CLEAR = 3.0       # margin above it, for vibration and the switch block's own play
+PLATE_SLOPE = (MOUNT_PLATE_W - CLAMP_W) / 2   # the plate's 45 degree underside, beside the clamp
+MOUNT_RISE = (max(0.0, SIDE_H + SIDE_CLEAR + max(0.0, PLATE_SLOPE - SIDE_GAP) - BAR_RELIEF - RUBBER)
+              if SIDE_H > 0 else 0.0)
 
 SEG = 96
 
@@ -463,19 +472,24 @@ def mount_upper():
         # load if the box is pulled upwards.
         xs = sorted((sx * LATCH_ARM_X1, sx * (MOUNT_PLATE_W / 2 + 1)))
         cuts.append(box(xs[0], xs[1], TOOTH_Y0 - QR_FIT, TOOTH_Y1 + QR_FIT, MOUNT_TOP - 0.1, POCKET_FLOOR))
-    cuts.append(zcyl(M3_INSERT_D, POCKET_FLOOR - 0.1, POCKET_FLOOR + LATCH_HOLE_DEPTH, 0, LATCH_SCREW_Y))
+    cuts.append(latch_pilot())
     # Shallow recess for the rubber pad, which takes up the dovetail's play.
     recess = 1.0 - PAD_PROUD
     cuts.append(box(-PAD_HALF_W, PAD_HALF_W, PAD_Y0, PAD_Y1, RAIL_TOP - 0.1, RAIL_TOP + recess))
-    # Blind holes for the heat-set inserts, so the clamp's sides stay solid. The
+    # Blind pilot holes the bolts tap into, so the clamp's sides stay solid. The
     # cone at the end prints without support.
     for sy in (-1, 1):
         y = sy * BOLT_Y
         hole_end = PARTING_UPPER - M4_HOLE_DEPTH
-        cuts.append(zcyl(M4_INSERT_D, hole_end, PARTING_UPPER + 1, 0, y))
-        cuts.append(Manifold.cylinder(M4_INSERT_D / 2, 0, M4_INSERT_D / 2, circular_segments=SEG).translate(
-            (0, y, hole_end - M4_INSERT_D / 2)))
+        cuts.append(zcyl(M4_PILOT_D, hole_end, PARTING_UPPER + 1, 0, y))
+        cuts.append(Manifold.cylinder(M4_PILOT_D / 2, 0, M4_PILOT_D / 2, circular_segments=SEG).translate(
+            (0, y, hole_end - M4_PILOT_D / 2)))
     return part - combine(cuts)
+
+
+def latch_pilot():
+    """The latch screw's blind pilot hole, below its pocket."""
+    return zcyl(M3_PILOT_D, POCKET_FLOOR - 0.1, POCKET_FLOOR + LATCH_HOLE_DEPTH, 0, LATCH_SCREW_Y)
 
 
 def latch_clip():
@@ -790,7 +804,8 @@ def main():
               screw - zcyl(3.0, BODY_DEPTH - M3_HOLE_DEPTH, BODY_DEPTH + 0.01, x, y), shell)
         check(r, f"M3 at {x:+.0f},{y:+.0f} vs bracket", screw, bracket)
     for sy in (-1, 1):
-        check(r, f"M4 bolt {sy:+d} vs mount, fully squeezed", m4_bolt(sy), mount)
+        thread = zcyl(4.0, PARTING_UPPER - M4_HOLE_DEPTH, PARTING_UPPER + 0.01, 0, sy * BOLT_Y)
+        check(r, f"M4 bolt {sy:+d} vs mount, fully squeezed, beyond its thread", m4_bolt(sy) - thread, mount)
     min_gap(r, "clamp halves apart", mount, lower, PARTING_GAP - 0.01)
     min_gap(r, "glass to lens", glass_dummy(), lens, GLASS_GAP - 0.01)
     min_gap(r, "XIAO to lid", xiao, lid, 0.5)
@@ -904,8 +919,18 @@ def main():
     print("Quick release:")
     check(r, "mount vs locked lid", mount, lid)
     check(r, "latch vs mount, at rest", latch, mount)
-    check(r, "latch screw vs mount", m3_latch_screw(), mount)
+    thread = zcyl(3.0, POCKET_FLOOR - 0.1, POCKET_FLOOR + LATCH_HOLE_DEPTH, 0, LATCH_SCREW_Y)
+    check(r, "latch screw vs mount, beyond its thread", m3_latch_screw() - thread, mount)
     check(r, "latch screw vs bar", m3_latch_screw(), bar)
+    if SIDE_H > 0:
+        # Whatever sits beside the clamp on the bar, such as a switch block, on either side.
+        top = BAR_Z - BAR_D / 2 - SIDE_H
+        side = combine([box(*sorted((sx * (CLAMP_W / 2 + SIDE_GAP), sx * 70)), -45, 45, top, BAR_Z)
+                        for sx in (-1, 1)])
+        # The neck sits beside it, so only the plate and what it carries must clear its top.
+        above = mount ^ box(-80, 80, -80, 80, -1, MOUNT_BACK + PLATE_SLOPE)
+        for name, part in [("plate", above), ("latch", latch), ("lid", lid), ("shell", shell)]:
+            min_gap(r, f"{name} above the switch block ({SIDE_H} mm above the bar)", part, side, SIDE_CLEAR)
     # The rail must also clear the buttons, unpressed, until the teeth reach the sleeve.
     clashes = [dy for dy in range(0, 56, 2)
                if ((latch ^ box(-40, 40, -40, 40, 0, 60) - box(-TOOTH_OUTER_X - 0.1, TOOTH_OUTER_X + 0.1, -40, 40, 0, 60))
@@ -953,22 +978,29 @@ def main():
     in_standoff = M2_LENGTH - BRACKET_T
     require(r, 1.5 <= in_standoff <= M2_MAX_THREAD,
             f"M2 x {M2_LENGTH:.0f}: {in_standoff:.1f} mm in the standoff, of {M2_MAX_THREAD} mm")
-    needs = M4_SEAT + PARTING_GAP / 2 + M4_INSERT_L
-    require(r, M4_LENGTH >= M4_SEAT + PARTING_GAP / 2 + M4_INSERT_L * 0.75,
-            f"M4 x {M4_LENGTH:.0f}: {needs:.1f} mm to pass fully through the insert with the clamp open")
+    bite = M4_LENGTH - (M4_SEAT + PARTING_GAP / 2)
+    require(r, bite >= M4_BITE, f"M4 x {M4_LENGTH:.0f}: {bite:.2f} mm of thread in the mount with the clamp open, "
+                                f"of {M4_BITE} mm needed")
     bolt_tip = M4_LENGTH - (M4_SEAT - PARTING_GAP) - PARTING_GAP / 2
     require(r, bolt_tip <= M4_HOLE_DEPTH, f"M4 bolt tip when fully squeezed: {bolt_tip:.2f} mm into a {M4_HOLE_DEPTH} mm hole")
     wing = M4_SEAT - PARTING_GAP / 2
     require(r, wing >= 5.0, f"plastic under each M4 head: {wing:.2f} mm")
-    side = CLAMP_H / 2 - BOLT_Y - M4_INSERT_D / 2
-    require(r, side >= 2.0, f"plastic beside each M4 insert: {side:.2f} mm")
-    below = PARTING_UPPER - M4_HOLE_DEPTH - M4_INSERT_D / 2 - MOUNT_TOP
-    require(r, below >= 2.0, f"insert hole stops {below:.2f} mm behind the plate's face")
-    require(r, M4_HOLE_DEPTH >= M4_INSERT_L + 0.5, f"insert fits in the straight part of its hole: {M4_HOLE_DEPTH} mm")
+    side = CLAMP_H / 2 - BOLT_Y - M4_PILOT_D / 2
+    require(r, side >= 3.0, f"plastic beside each M4 pilot hole: {side:.2f} mm")
+    side = CLAMP_W / 2 - M4_PILOT_D / 2
+    require(r, side >= 3.0, f"plastic along the bar beside each M4 pilot hole: {side:.2f} mm")
+    below = PARTING_UPPER - M4_HOLE_DEPTH - M4_PILOT_D / 2 - MOUNT_TOP
+    require(r, below >= 2.0, f"M4 pilot hole stops {below:.2f} mm behind the plate's face")
+    latch_bite = M3_LENGTH - (LATCH_T - M3_HEAD_H) - (POCKET_FLOOR - LATCH_Z1)
+    require(r, latch_bite >= M3_BITE, f"M3 x {M3_LENGTH:.0f} latch screw: {latch_bite:.2f} mm of thread in the mount, "
+                                      f"of {M3_BITE} mm needed")
+    require(r, LATCH_HOLE_DEPTH >= latch_bite + 1.0,
+            f"latch screw's pilot hole, {LATCH_HOLE_DEPTH} mm, is deeper than the screw reaches")
+    check(r, "latch screw's pilot hole vs bar", latch_pilot(), bar_saddle())
     floor = MOUNT_BACK - POCKET_FLOOR
     require(r, floor >= 1.2, f"plastic between the latch's pocket and the bar: {floor:.2f} mm")
-    between = (BOLT_Y - M4_INSERT_D / 2) - (abs(LATCH_SCREW_Y) + M3_INSERT_D / 2)
-    require(r, between >= 1.0, f"plastic between the latch's insert and the M4 insert: {between:.2f} mm")
+    between = (BOLT_Y - M4_PILOT_D / 2) - (abs(LATCH_SCREW_Y) + M3_PILOT_D / 2)
+    require(r, between >= 1.5, f"plastic between the latch's pilot hole and the M4 pilot hole: {between:.2f} mm")
 
     print("Overall:")
     b = (shell + lid + mount + lower).bounding_box()

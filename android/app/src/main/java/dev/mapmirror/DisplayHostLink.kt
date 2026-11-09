@@ -3,6 +3,8 @@ package dev.mapmirror
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.provider.Settings.Global as GlobalSettings
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -98,10 +100,22 @@ class DisplayHostLink private constructor(
             if (app.isEmpty()) throw IOException("choose a navigation app first")
             tryOpen(s.hostToken, w, h, dpi, app)?.let { return it }
             if (!s.adbPaired) throw IOException("pair wireless debugging first")
+            // Wireless debugging only runs on Wi-Fi the phone has joined itself, not on
+            // mobile data or the display's own Wi-Fi.
+            if (!onWifi(ctx)) {
+                throw IOException(
+                    if (canTurnOnWirelessDebugging(ctx)) {
+                        "the display service isn't running, as after the phone restarts. It starts by " +
+                            "itself the next time the phone is on Wi-Fi. Until then, use Screen capture"
+                    } else {
+                        "the display service isn't running, as after the phone restarts. Start mirroring " +
+                            "once on Wi-Fi before you ride. Until then, use Screen capture"
+                    }
+                )
+            }
 
             log("Starting display service…")
-            s.hostToken = newToken()
-            launch(ctx, s.hostToken, log)
+            startService(ctx, s, log)
             val deadline = System.currentTimeMillis() + START_WAIT_MS
             while (System.currentTimeMillis() < deadline) {
                 tryOpen(s.hostToken, w, h, dpi, app)?.let { return it }
@@ -109,6 +123,32 @@ class DisplayHostLink private constructor(
             }
             throw IOException("the display service didn't start")
         }
+
+        /** Starts the display service, with a new token. Needs the phone on Wi-Fi. */
+        fun startService(ctx: Context, s: Settings, log: (String) -> Unit) {
+            s.hostToken = newToken()
+            launch(ctx, s.hostToken, log)
+        }
+
+        /** True if the display service is listening. It doesn't open a session. */
+        fun isRunning(): Boolean = try {
+            Socket().use {
+                it.connect(InetSocketAddress(InetAddress.getLoopbackAddress(), DisplayHostMain.PORT), 500)
+            }
+            true
+        } catch (_: IOException) {
+            false
+        }
+
+        /** The phone's own Wi-Fi, which is what Wireless debugging needs. */
+        fun onWifi(ctx: Context): Boolean {
+            val cm = ctx.getSystemService(ConnectivityManager::class.java)
+            val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+            return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+        }
+
+        fun canTurnOnWirelessDebugging(ctx: Context) =
+            ctx.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED
 
         /** Returns null if the service isn't running or doesn't accept the token. */
         private fun tryOpen(token: String, w: Int, h: Int, dpi: Int, app: String): DisplayHostLink? {
@@ -144,8 +184,7 @@ class DisplayHostLink private constructor(
         private fun turnOnWirelessDebugging(ctx: Context, log: (String) -> Unit): Boolean {
             val resolver = ctx.contentResolver
             if (GlobalSettings.getInt(resolver, ADB_WIFI_ENABLED, 0) == 1) return false
-            if (ctx.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS)
-                != PackageManager.PERMISSION_GRANTED) return false
+            if (!canTurnOnWirelessDebugging(ctx)) return false
             log("Turning on Wireless debugging…")
             GlobalSettings.putInt(resolver, ADB_WIFI_ENABLED, 1)
             Thread.sleep(ADB_WIFI_START_MS)
@@ -171,6 +210,13 @@ class DisplayHostLink private constructor(
                 val connected = try {
                     adb.connectTls(ctx, ADB_TIMEOUT_MS)
                 } catch (e: Exception) {
+                    // Android forgets a pairing after 7 days unused, unless "Disable adb
+                    // authorization timeout" is on in Developer options.
+                    if (e.message?.contains("pairing", ignoreCase = true) == true) {
+                        Settings(ctx).adbPaired = false
+                        HostStarter.schedule(ctx)
+                        throw IOException("Android has forgotten the pairing. Tap \"Pair wireless debugging\" again")
+                    }
                     throw IOException("turn on Wireless debugging, on Wi-Fi, to start it (${e.message ?: e})")
                 }
                 if (!connected) throw IOException("turn on Wireless debugging, on Wi-Fi, to start it")
@@ -200,14 +246,8 @@ class DisplayHostLink private constructor(
         private fun waitUntilListening() {
             val deadline = System.currentTimeMillis() + START_WAIT_MS
             while (System.currentTimeMillis() < deadline) {
-                try {
-                    Socket().use {
-                        it.connect(InetSocketAddress(InetAddress.getLoopbackAddress(), DisplayHostMain.PORT), 500)
-                    }
-                    return
-                } catch (_: IOException) {
-                    Thread.sleep(100)
-                }
+                if (isRunning()) return
+                Thread.sleep(100)
             }
         }
 

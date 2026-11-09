@@ -74,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         source.check(if (settings.source == Settings.VIRTUAL) R.id.radioVirtual else R.id.radioScreen)
         source.setOnCheckedChangeListener { _, id ->
             settings.source = if (id == R.id.radioVirtual) Settings.VIRTUAL else Settings.SCREEN
+            HostStarter.schedule(this)
             applySourceLayout()
         }
         applySourceLayout()
@@ -165,6 +166,9 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         CaptureService.previewVisible = true
+        // While on Wi-Fi, get the display service running for the ride.
+        HostStarter.schedule(this)
+        HostStarter.startSoon(this) { CaptureService.status.value = it }
     }
 
     override fun onStop() {

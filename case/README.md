@@ -65,10 +65,9 @@ The display's sizes come from [Waveshare's 2D drawing](https://files.waveshare.c
 | Setting | Default | What to check |
 |---|---|---|
 | `BAR_D` | 22.2 mm | Handlebar diameter on **each vehicle**. Common sizes are 22.2, 25.4 and 28.6 mm. Build a mount for each size |
-| `MOUNT_RISE` | 0 mm | **On clip-on bars**, where the switch block or lever sits right beside the clamp. Measure how far the highest of them stands above the top of the bar, and set this to that minus 1.8 mm, plus 3 mm of margin. The upper mount then gets a neck as narrow as the clamp, and the plate and box sit above them |
+| `SIDE_H` | 16 mm | **On clip-on bars**, where the switch block or lever clamp sits right beside the mount. Lay a ruler across the tallest of them, on the side the screen faces, and measure down to the top of the bar. The build then gives the upper mount a neck as narrow as the clamp, so the plate and box clear them by `SIDE_CLEAR` (3 mm), and checks it. 16 mm is an estimate from photos of a Hero Karizma XMR 210's left switch block. Set 0 for a bar with room beside the mount. If there's a gap along the bar between the clamp and the switch block, put it in `SIDE_GAP` and the neck gets a little shorter |
 | `PLUG_W`, `PLUG_H` | 12.5 × 6.9 mm | **Measure the moulded body of your USB-C plug.** It has to reach about 6 mm into the port for the plug to seat |
-| `M3_INSERT_D`, `M4_INSERT_D` | 4.2, 5.6 mm | Hole sizes for the mount's heat-set inserts. Check the seller's figures |
-| `M3_PILOT_D`, `M2_PILOT_D` | 2.6, 1.7 mm | Pilot holes the shell's screws tap into. If a screw is very hard to drive, add 0.1 mm. If it strips, take 0.1 mm off |
+| `M4_PILOT_D`, `M3_PILOT_D`, `M2_PILOT_D` | 3.5, 2.6, 1.7 mm | Pilot holes the screws tap into, in the shell and the upper mount. If a screw is very hard to drive, add 0.1 mm. If it strips, take 0.1 mm off |
 | `USB_OVERHANG` | 1.5 mm | **Estimate.** How far the XIAO's USB socket sticks out past its board |
 | `STANDOFF_OD` | 3.6 mm | **Estimate.** Outside diameter of the display's brass standoffs |
 | `GLASS_T` | 1.9 mm | **Estimate.** Thickness of the glass and backlight, in front of the PCB |
@@ -155,11 +154,9 @@ The build fails if a change stops a part from fitting.
 
 | Qty | Part | Used for |
 |---|---|---|
-| 2 | M4 x 16 cap screw | Clamp |
-| 2 | M4 x 8.1 heat-set insert, about 5.6 mm hole | Upper mount |
-| 1 | M3 x 6 button head screw | Latch |
-| 1 | M3 x 4 heat-set insert, about 4.2 mm hole | Latch |
-| 1 | Rubber strip, about 1 mm thick and 22 mm wide | Between the clamp and bar |
+| 2 | M4 x 16 cap screw | Clamp, tapping into the upper mount |
+| 1 | M3 x 8 button head screw | Latch, tapping into the upper mount |
+| 1 | Rubber strip, about 1 mm thick and 17 mm wide | Between the clamp and bar |
 | 1 | 8 × 18 mm self-adhesive rubber, 1 mm thick | Pad on the rail, which stops rattle |
 | 1 | Medium-strength threadlocker, such as blue Loctite 243 | M4 bolts and the latch screw |
 | 1 | 12 V to 5 V USB converter, fused | Power from the bike |
@@ -216,10 +213,10 @@ To open the box, take out the four screws and cut the silicone. Use a new bead w
 
 ## Assembling a mount
 
-1. Press the two M4 inserts into the holes in the upper mount's flat faces, and the M3 insert into the hole in the latch's pocket. Let them cool.
+1. The upper mount has no inserts. Cut its threads first: drive an M4 x 16 into each hole in its flat faces, and the M3 x 8 into the hole in the latch's pocket, straight and slowly, all the way, then back them out. Print the mount with at least 4 walls, so the bolts cut into solid plastic.
 2. Drop the latch into its pocket, with its teeth facing out of the pocket, and fit its screw with threadlocker. Check both buttons spring back freely.
 3. Stick the rubber pad in the shallow recess on the rail.
-4. Wrap the 22 mm rubber around the bar and fit the lower clamp half. Fit the M4 bolts with threadlocker.
+4. Wrap the 17 mm rubber around the bar and fit the lower clamp half. Fit the M4 bolts with threadlocker.
 5. Rotate the mount to the viewing angle you want, keeping the rail's closed end at the top, so the box slides downwards to fit. Tighten both bolts evenly. Keep the gap between the halves about the same on each side. Don't close it completely, as that means the clamp no longer grips.
 6. Route the cable as below, so it stays on the bike when the box comes off.
 
@@ -264,7 +261,7 @@ The two teeth are all that stop the box sliding up off the mount. There's no bac
 - **Box width:** the box is about 13 mm wider and 12 mm taller than the display. The M3 screws have to sit outside the display's corners, and the side walls hold the ledges that the bracket screws into.
 - **Latch:** it's a separate part because arms built into the mount would hang in the air while printing. It also means wear is limited to a small part that's quick to reprint, rather than the box.
 - **Water in the channel:** the channel's open end points down, so water can drain out.
-- **Clamp bolts:** heat-set inserts replace nuts, so the clamp's sides have no slots. The holes end in cones, and the lower clamp's holes have pointed tops, so neither needs support.
+- **Clamp bolts:** they tap straight into the upper mount, so it needs no nuts or inserts, and its sides have no slots. The holes end in cones, and the lower clamp's holes have pointed tops, so neither needs support. Don't take the bolts in and out more than you need to, as each time wears the plastic thread a little.
 - **Bar grip:** the clamp's upper half grips the bar on two sloped sides, with a small gap at the top. That gap is what lets it print without support.
 - **Depth:** the box's depth comes from stacking the display, its connector and the XIAO behind each other. The quick release adds about 5 mm over a fixed mount.
 - **Heat:** the box is sealed with no vents. If the display dims or the board resets in hot sun, a lighter colour helps.

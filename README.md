@@ -82,7 +82,11 @@ It survives reboots and app updates, but has to be repeated if the app is uninst
 
 **Keep USB debugging on.** Joining the display's Wi-Fi turns off Wireless debugging, and the display service stops with it unless USB debugging is on.
 
-**After each reboot, or if the service stops:** be on a normal Wi-Fi network and tap **Start mirroring**. The display service can't start on mobile data or on the display's own Wi-Fi, because Android turns Wireless debugging straight back off there. Once running, the service needs neither until the next reboot, so start it before leaving Wi-Fi.
+**Wi-Fi at the motorcycle isn't needed.** The display service needs Wi-Fi to start, but once running it works anywhere until the phone restarts. It can't start on mobile data or on the display's own Wi-Fi, because Android turns Wireless debugging straight back off there. So MapMirror starts it while you're still on Wi-Fi:
+- **With the permission above:** it starts by itself in the background, after a restart, the next time the phone is on Wi-Fi. Opening MapMirror on Wi-Fi also starts it. Nothing to remember.
+- **Without it:** after each restart, tap **Start mirroring** once while on Wi-Fi, with Wireless debugging on, before you leave.
+
+If you reach the motorcycle and it isn't running, MapMirror says so. Use **Screen capture** for that ride: it doesn't need the display service.
 
 **To mirror:**
 1. Start navigation on the phone. You can't tap the app on the phone once it's on the virtual display.

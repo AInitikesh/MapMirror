@@ -82,6 +82,7 @@ class PairingService : Service() {
         try {
             if (!AdbManager(this).pair(port, code)) throw IllegalStateException("the code wasn't accepted")
             Settings(this).adbPaired = true
+            HostStarter.schedule(this)
             CaptureService.status.value = "Paired with wireless debugging"
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH)
             update(notification("Paired", "MapMirror can now start its display service"))
