@@ -104,10 +104,29 @@ class DisplayHostLink private constructor(
         private const val ALLOW_WAIT_MS = 60_000L // for the person to tap Allow, the first time
         private const val JOIN_WAIT_MS = 30_000L
 
+        /**
+         * Why the display service can't start or keep running, or null. It runs through
+         * debugging: turning off Developer options stops it, and so does turning off
+         * Wireless debugging while USB debugging is off.
+         */
+        fun debuggingProblem(ctx: Context): String? {
+            val resolver = ctx.contentResolver
+            return when {
+                GlobalSettings.getInt(resolver, GlobalSettings.DEVELOPMENT_SETTINGS_ENABLED, 0) != 1 ->
+                    "Developer options are off, and Virtual display needs them. Turn them on in " +
+                        "Settings → System → Developer options, with USB debugging on, or use Screen capture"
+                GlobalSettings.getInt(resolver, GlobalSettings.ADB_ENABLED, 0) != 1 ->
+                    "USB debugging is off, and Virtual display needs it on to keep running. Turn it on in " +
+                        "Developer options, or use Screen capture"
+                else -> null
+            }
+        }
+
         fun open(ctx: Context, s: Settings, w: Int, h: Int, dpi: Int, log: (String) -> Unit): DisplayHostLink {
             val app = s.navPackage
             if (app.isEmpty()) throw IOException("choose a navigation app first")
             tryOpen(s.hostToken, w, h, dpi, app)?.let { return it }
+            debuggingProblem(ctx)?.let { throw IOException(it) }
             if (!s.adbPaired) throw IOException("pair wireless debugging first")
             // Wireless debugging only runs on Wi-Fi, not mobile data. With none around, as at
             // the motorcycle, join the display's own Wi-Fi for long enough to start the service.

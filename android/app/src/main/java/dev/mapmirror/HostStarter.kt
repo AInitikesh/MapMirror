@@ -67,6 +67,7 @@ class HostStarter : JobService() {
             val s = Settings(ctx)
             if (!canRunUnattended(ctx, s) || CaptureService.running.value) return
             if (!DisplayHostLink.onWifi(ctx) || DisplayHostLink.isRunning()) return
+            if (DisplayHostLink.debuggingProblem(ctx) != null) return // Start mirroring explains it
             if (!busy.compareAndSet(false, true)) return
             try {
                 DisplayHostLink.startService(ctx, s) {}
