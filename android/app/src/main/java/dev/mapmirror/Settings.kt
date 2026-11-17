@@ -19,6 +19,22 @@ class Settings(ctx: Context) {
         get() = p.getString("displayKey", "") ?: ""
         set(v) = p.edit().putString("displayKey", v).commit().let {}
 
+    /**
+     * The paired display's own Wi-Fi, from the BLE link. With no other Wi-Fi around, as at
+     * the motorcycle, the phone joins it so Wireless debugging can start the display service.
+     */
+    var displayWifiSsid: String
+        get() = p.getString("displayWifiSsid", "") ?: ""
+        set(v) = p.edit().putString("displayWifiSsid", v).apply()
+
+    var displayWifiPass: String
+        get() = p.getString("displayWifiPass", "") ?: ""
+        set(v) = p.edit().putString("displayWifiPass", v).apply()
+
+    var displayWifiBssid: String
+        get() = p.getString("displayWifiBssid", "") ?: ""
+        set(v) = p.edit().putString("displayWifiBssid", v).apply()
+
     /** Turns the picture upside down, for a display mounted upside down. */
     var rotate180: Boolean
         get() = p.getBoolean("rotate180", false)

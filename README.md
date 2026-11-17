@@ -80,13 +80,14 @@ adb shell pm grant dev.mapmirror android.permission.WRITE_SECURE_SETTINGS
 
 It survives reboots and app updates, but has to be repeated if the app is uninstalled.
 
-**Keep USB debugging on.** Joining the display's Wi-Fi turns off Wireless debugging, and the display service stops with it unless USB debugging is on.
+**Keep Developer options and USB debugging on.** The display service runs through them. Turning Developer options off stops it at once, and turning off Wireless debugging stops it unless USB debugging is on.
 
-**Wi-Fi at the motorcycle isn't needed.** The display service needs Wi-Fi to start, but once running it works anywhere until the phone restarts. It can't start on mobile data or on the display's own Wi-Fi, because Android turns Wireless debugging straight back off there. So MapMirror starts it while you're still on Wi-Fi:
-- **With the permission above:** it starts by itself in the background, after a restart, the next time the phone is on Wi-Fi. Opening MapMirror on Wi-Fi also starts it. Nothing to remember.
-- **Without it:** after each restart, tap **Start mirroring** once while on Wi-Fi, with Wireless debugging on, before you leave.
+**No Wi-Fi needed at the motorcycle.** The display service needs Wireless debugging to start, which only runs on Wi-Fi, never on mobile data. Once running, it works anywhere until the phone restarts. MapMirror starts it in one of three ways:
+- **With the permission above, in the background:** after a restart, the next time the phone is on Wi-Fi. Opening MapMirror on Wi-Fi also starts it.
+- **At the motorcycle, on the display's own Wi-Fi:** if it isn't running and the phone has no other Wi-Fi, **Start mirroring** joins the display's Wi-Fi and starts it there. This needs one mirroring session first, so the app knows the display's Wi-Fi, and the permission above. The first time, Android asks **Allow wireless debugging on this network?**: tick **Always allow on this network** and tap **Allow**. The phone keeps using mobile data for the internet.
+- **Without the permission:** turn on Wireless debugging by hand, on any Wi-Fi, and tap **Start mirroring**.
 
-If you reach the motorcycle and it isn't running, MapMirror says so. Use **Screen capture** for that ride: it doesn't need the display service.
+If none of these is possible, use **Screen capture** for that ride: it doesn't need the display service.
 
 **To mirror:**
 1. Start navigation on the phone. You can't tap the app on the phone once it's on the virtual display.

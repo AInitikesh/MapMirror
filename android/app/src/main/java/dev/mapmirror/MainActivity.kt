@@ -296,6 +296,9 @@ class MainActivity : AppCompatActivity() {
         }
         settings.displayAddress = ""
         settings.displayKey = ""
+        settings.displayWifiSsid = ""
+        settings.displayWifiPass = ""
+        settings.displayWifiBssid = ""
         try {
             val adapter = getSystemService(BluetoothManager::class.java).adapter
             val device = adapter.getRemoteDevice(address)

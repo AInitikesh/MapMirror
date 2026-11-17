@@ -4,7 +4,12 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
+import android.net.MacAddress
+import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.net.wifi.WifiNetworkSpecifier
+import android.os.Build
 import android.provider.Settings.Global as GlobalSettings
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -16,6 +21,8 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.security.SecureRandom
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * The app's connection to the display service (see DisplayHostMain). If the service
@@ -94,34 +101,74 @@ class DisplayHostLink private constructor(
         private const val LAUNCHED = "mapmirror_launched"
         private const val ADB_WIFI_ENABLED = "adb_wifi_enabled" // hidden from the SDK
         private const val ADB_WIFI_START_MS = 3000L
+        private const val ALLOW_WAIT_MS = 60_000L // for the person to tap Allow, the first time
+        private const val JOIN_WAIT_MS = 30_000L
 
         fun open(ctx: Context, s: Settings, w: Int, h: Int, dpi: Int, log: (String) -> Unit): DisplayHostLink {
             val app = s.navPackage
             if (app.isEmpty()) throw IOException("choose a navigation app first")
             tryOpen(s.hostToken, w, h, dpi, app)?.let { return it }
             if (!s.adbPaired) throw IOException("pair wireless debugging first")
-            // Wireless debugging only runs on Wi-Fi the phone has joined itself, not on
-            // mobile data or the display's own Wi-Fi.
-            if (!onWifi(ctx)) {
-                throw IOException(
-                    if (canTurnOnWirelessDebugging(ctx)) {
-                        "the display service isn't running, as after the phone restarts. It starts by " +
-                            "itself the next time the phone is on Wi-Fi. Until then, use Screen capture"
-                    } else {
-                        "the display service isn't running, as after the phone restarts. Start mirroring " +
-                            "once on Wi-Fi before you ride. Until then, use Screen capture"
-                    }
-                )
+            // Wireless debugging only runs on Wi-Fi, not mobile data. With none around, as at
+            // the motorcycle, join the display's own Wi-Fi for long enough to start the service.
+            val joined = if (!onWifi(ctx)) joinDisplayWifi(ctx, s, log) else null
+            try {
+                if (!onWifi(ctx)) {
+                    throw IOException(
+                        if (s.displayWifiSsid.isEmpty()) {
+                            "the display service needs Wi-Fi to start, as after the phone restarts. Join " +
+                                "any Wi-Fi and start again. After one mirroring session, the display's own Wi-Fi works too"
+                        } else {
+                            "couldn't join ${s.displayWifiSsid} to start the display service. Check the display " +
+                                "is on and the phone's Wi-Fi is on, then start again"
+                        }
+                    )
+                }
+                log("Starting display service…")
+                startService(ctx, s, log)
+            } finally {
+                // The transport joins it again, for frames.
+                joined?.let { ctx.getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(it) }
             }
-
-            log("Starting display service…")
-            startService(ctx, s, log)
             val deadline = System.currentTimeMillis() + START_WAIT_MS
             while (System.currentTimeMillis() < deadline) {
                 tryOpen(s.hostToken, w, h, dpi, app)?.let { return it }
                 Thread.sleep(250)
             }
             throw IOException("the display service didn't start")
+        }
+
+        /**
+         * Joins the display's Wi-Fi, as the transport does, and returns the request to release,
+         * or null if it can't. On a phone with one Wi-Fi radio, this is the phone's own Wi-Fi
+         * connection while it lasts, which Wireless debugging accepts. It has no internet, so
+         * the phone keeps using mobile data for that.
+         */
+        private fun joinDisplayWifi(
+            ctx: Context, s: Settings, log: (String) -> Unit,
+        ): ConnectivityManager.NetworkCallback? {
+            if (s.displayWifiSsid.isEmpty() || Build.VERSION.SDK_INT < 29) return null
+            log("No Wi-Fi: joining ${s.displayWifiSsid} to start the display service…")
+            // The same BSSID as the transport, so Android remembers the approval.
+            val specifier = WifiNetworkSpecifier.Builder()
+                .setSsid(s.displayWifiSsid)
+                .setWpa2Passphrase(s.displayWifiPass)
+                .apply { if (s.displayWifiBssid.isNotEmpty()) setBssid(MacAddress.fromString(s.displayWifiBssid)) }
+                .build()
+            val request = NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .setNetworkSpecifier(specifier)
+                .build()
+            val up = CountDownLatch(1)
+            val callback = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) = up.countDown()
+            }
+            val cm = ctx.getSystemService(ConnectivityManager::class.java)
+            cm.requestNetwork(request, callback)
+            if (up.await(JOIN_WAIT_MS, TimeUnit.MILLISECONDS)) return callback
+            cm.unregisterNetworkCallback(callback)
+            return null
         }
 
         /** Starts the display service, with a new token. Needs the phone on Wi-Fi. */
@@ -140,11 +187,17 @@ class DisplayHostLink private constructor(
             false
         }
 
-        /** The phone's own Wi-Fi, which is what Wireless debugging needs. */
+        /**
+         * True if the phone has joined a Wi-Fi network itself, which is what Wireless
+         * debugging needs. That includes the display's own Wi-Fi once it's saved: it has
+         * no internet, so the phone keeps mobile data as its default network.
+         */
+        @Suppress("DEPRECATION") // allNetworks: a callback is overkill for a one-off check
         fun onWifi(ctx: Context): Boolean {
             val cm = ctx.getSystemService(ConnectivityManager::class.java)
-            val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
-            return caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+            return cm.allNetworks.any {
+                cm.getNetworkCapabilities(it)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true
+            }
         }
 
         fun canTurnOnWirelessDebugging(ctx: Context) =
@@ -188,11 +241,16 @@ class DisplayHostLink private constructor(
             log("Turning on Wireless debugging…")
             GlobalSettings.putInt(resolver, ADB_WIFI_ENABLED, 1)
             Thread.sleep(ADB_WIFI_START_MS)
-            // Android switches it straight back off unless the phone is on Wi-Fi it trusts.
-            if (GlobalSettings.getInt(resolver, ADB_WIFI_ENABLED, 0) != 1) {
-                throw IOException("the display service needs Wi-Fi to start. Connect to Wi-Fi once, then start again")
+            if (GlobalSettings.getInt(resolver, ADB_WIFI_ENABLED, 0) == 1) return true
+            // On a network it doesn't trust yet, Android switches it straight back off and asks
+            // "Allow wireless debugging on this network?". Allowing turns it on.
+            log("Tick \"Always allow on this network\" and tap Allow, so it works by itself next time")
+            val until = System.currentTimeMillis() + ALLOW_WAIT_MS
+            while (System.currentTimeMillis() < until) {
+                Thread.sleep(500)
+                if (GlobalSettings.getInt(resolver, ADB_WIFI_ENABLED, 0) == 1) return true
             }
-            return true
+            throw IOException("Wireless debugging wasn't allowed on this Wi-Fi, so the display service can't start")
         }
 
         private fun launch(ctx: Context, token: String, log: (String) -> Unit) {

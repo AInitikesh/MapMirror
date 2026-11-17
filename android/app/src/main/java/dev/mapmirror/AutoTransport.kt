@@ -22,7 +22,7 @@ import android.os.SystemClock
  */
 class AutoTransport(
     private val ctx: Context,
-    settings: Settings,
+    private val settings: Settings,
     private val log: (String) -> Unit,
 ) : Transport {
 
@@ -81,6 +81,11 @@ class AutoTransport(
             if (closed || details == info) return@post
             info = details
             dropWifi()
+            if (details.password.isNotEmpty()) {
+                settings.displayWifiSsid = details.ssid
+                settings.displayWifiPass = details.password
+                settings.displayWifiBssid = details.bssid
+            }
             if (Crypto.unhex(details.keyHex)?.size != 32) {
                 log("Staying on BLE: no key for the display's Wi-Fi")
             } else if (details.password.isEmpty()) {
