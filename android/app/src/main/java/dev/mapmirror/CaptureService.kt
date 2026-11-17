@@ -83,6 +83,7 @@ class CaptureService : Service() {
         private const val LIGHT_ABOVE = 145
 
         private const val CHANNEL = "capture"
+        private const val WIFI_DETAILS_WAIT_MS = 120_000L // time to pair, the first time
         private const val NOTIF_ID = 1
 
         val status = MutableStateFlow("Idle")
@@ -344,6 +345,18 @@ class CaptureService : Service() {
      */
     private fun runVirtual() {
         try {
+            // With no Wi-Fi around, the display service starts on the display's own Wi-Fi.
+            // After pairing a display, the app doesn't know that yet, so connect over BLE first
+            // and wait for it. The transport then also joins that Wi-Fi.
+            if (settings.displayWifiSsid.isEmpty() && !DisplayHostLink.isRunning() && !DisplayHostLink.onWifi(this)) {
+                setStatus("Connecting to the display, to find its Wi-Fi…")
+                startTransport()
+                val until = SystemClock.uptimeMillis() + WIFI_DETAILS_WAIT_MS
+                while (settings.displayWifiSsid.isEmpty() && running.value && SystemClock.uptimeMillis() < until) {
+                    Thread.sleep(250)
+                }
+                if (!running.value) return
+            }
             val l = DisplayHostLink.open(this, settings, VD_W, VD_H, settings.mapDpi, ::setStatus)
             link = l
             if (!running.value) { l.close(); return } // stopped while connecting
@@ -352,9 +365,9 @@ class CaptureService : Service() {
                 encodedFrame = null
                 sendLatestToPanel()
             }
-            // Only now: joining the display's Wi-Fi turns off wireless debugging,
-            // which starting the display service needs.
-            startTransport()
+            // Only now, unless it's already up: on other Wi-Fi, joining the display's
+            // would switch off Wireless debugging while it starts the display service.
+            if (transport == null) startTransport()
             while (running.value) {
                 val started = SystemClock.uptimeMillis()
                 l.nextFrame()
